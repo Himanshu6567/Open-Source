@@ -1,77 +1,56 @@
 import numpy as np
+
+# Create a dictionary to store the lexicon
 lexicon = {}
-def update_lexicon(current : str, next_word : str) -> None:
- # Add the input word to the lexicon if it in there yet.
- if current not in lexicon:
- lexicon.update({current: {next_word: 1} })
- return
- # Recieve te probabilties of the input word.
- options = lexicon[current]
- # Check if the output word is in the propability list.
- if next_word not in options:
- options.update({next_word : 1})
- else:
- options.update({next_word : options[next_word] + 1})
- # Update the lexicon
- lexicon[current] = options
-So we created the function to fill the vocabulary of words, now let’s use this function on the 
-dataset which will just split the sentences into words and select the last word of the sentence:
+
+# Function to update the lexicon with word transitions
+def update_lexicon(current: str, next_word: str) -> None:
+    # If the current word is not in the lexicon, add it with the next word
+    if current not in lexicon:
+        lexicon[current] = {next_word: 1}
+        return  # Early return to avoid further processing
+
+    # Get the probabilities for the current word
+    options = lexicon[current]
+
+    # Check if the next word is in the list of probabilities
+    if next_word not in options:
+        # Add the next word with a count of 1
+        options[next_word] = 1
+    else:
+        # Increase the count of the existing next word
+        options[next_word] += 1
+    
+    # Update the lexicon with the modified options
+    lexicon[current] = options
+
+# Populate the lexicon from a dataset
 with open('dataset.txt', 'r') as dataset:
- for line in dataset:
- words = line.strip().split(' ')
- for i in range(len(words) - 1):
- update_lexicon(words[i], words[i+1])
-Now we are ready to find the next predicted words:
+    for line in dataset:
+        words = line.strip().split(' ')
+        # Iterate over the words except for the last one
+        for i in range(len(words) - 1):
+            # Update lexicon with the current and next word
+            update_lexicon(words[i], words[i + 1])
+
+# Adjust probabilities in the lexicon
 for word, transition in lexicon.items():
- transition = dict((key, value / sum(transition.values())) for key, value in transition.items())
- lexicon[word] = transition
- 
+    # Normalize the probabilities to sum up to 1
+    total = sum(transition.values())
+    lexicon[word] = {key: value / total for key, value in transition.items()}
+
+# Predict the next word based on user input
 line = input('> ')
 word = line.strip().split(' ')[-1]
+
+# Check if the input word is in the lexicon
 if word not in lexicon:
- print('Word not found')
+    print('Word not found')
 else:
- options = lexicon[word]
- predicted = np.random.choice(list(options.keys()), p=list(options.values()))
- print(line + ' ' + predicted)
-The code above will take user input and find your input in the dataset, so to test your code, use 
-the sentences that are familiar with the sentences written by you in the dataset. The code will find 
-the next word and print it at the end of your input sentence.
-This is how we can predict the next word with Python. Below is the complete code used in this 
-article for the next word prediction task with Python.
-import numpy as np
-lexicon = {}
-def update_lexicon(current : str, next_word : str) -> None:
- # Add the input word to the lexicon if it in there yet.
- if current not in lexicon:
- lexicon.update({current: {next_word: 1} })
- return
- # Recieve te probabilties of the input word.
- options = lexicon[current]
- # Check if the output word is in the propability list.
- if next_word not in options:
- options.update({next_word : 1})
- else:
- options.update({next_word : options[next_word] + 1})
- # Update the lexicon
- lexicon[current] = options
-# Populate lexicon
-with open('dataset.txt', 'r') as dataset:
- for line in dataset:
- words = line.strip().split(' ')
- for i in range(len(words) - 1):
- update_lexicon(words[i], words[i+1])
- 
-# Adjust propability
-for word, transition in lexicon.items():
- transition = dict((key, value / sum(transition.values())) for key, value in transition.items())
- lexicon[word] = transition
-# Predict next word
-line = input('> ')
-word = line.strip().split(' ')[-1]
-if word not in lexicon:
- print('Word not found')
-else:
- options = lexicon[word]
- predicted = np.random.choice(list(options.keys()), p=list(options.values()))
- print(line + ' ' + predicted)
+    # Get the transition probabilities for the input word
+    options = lexicon[word]
+    
+    # Predict the next word based on probabilities
+    predicted = np.random.choice(list(options.keys()), p=list(options.values()))
+    
+    print(f"{line} {predicted}")
